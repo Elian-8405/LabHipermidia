@@ -5,6 +5,7 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,27 +17,28 @@ public class Main {
         String caminho = "C:\\Users\\elian\\OneDrive\\Área de Trabalho\\motorDeBusca\\Main\\src\\documents\\verbetesWikipedia.xml";
         Document doc = lerXML(caminho);
         OperacoesXML op = new OperacoesXML();
-        String entrada = "10gepon";
-        System.out.println("E: " + entrada.replaceAll("\\s", ""));
-
-        Pattern pattern = Pattern.compile(entrada, Pattern.CASE_INSENSITIVE);
-
         Element root = doc.getDocumentElement();
-        NodeList childs = doc.getElementsByTagName("text");
-        Node cur;
-        cur = childs.item(0);
-        Element e = (Element)cur;
+        String entrada = "computer";
 
-        String s = e.getTextContent();
-        
-        Matcher matcher = pattern.matcher(s);
+        op.search(entrada.toLowerCase(), root);
 
-        while (matcher.find()){
-            System.out.println(matcher.group());
-        }
-        System.out.println(s.length());
-        //String entrada = "10G";
-        System.out.println();
+
+
+
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+    //op.printElements(root);
 
 
 
@@ -51,7 +53,7 @@ public class Main {
 
 
 
-    }
+
     public static Document lerXML(String caminhoDoArquivo) throws Exception {
 
 
