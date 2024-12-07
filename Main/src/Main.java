@@ -18,9 +18,10 @@ public class Main {
         Document doc = lerXML(caminho);
         OperacoesXML op = new OperacoesXML();
         Element root = doc.getDocumentElement();
-        String entrada = "computer";
+        String entrada = "Computer";
 
-        op.search(entrada.toLowerCase(), root);
+
+        op.search(root, entrada);
 
 
 

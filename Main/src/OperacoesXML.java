@@ -2,6 +2,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,6 +14,44 @@ public class OperacoesXML {
     public OperacoesXML(){
 
     }
+    /*
+    class Resultado {
+        private final String id;
+        private final String titulo;
+        private final double relevancia;
+
+        public Resultado(String id, String titulo, double relevancia) {
+            this.id = id;
+            this.titulo = titulo;
+            this.relevancia = relevancia;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Resultado resultado)) return false;
+            return Double.compare(getRelevancia(), resultado.getRelevancia()) == 0;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(getRelevancia());
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getTitulo() {
+            return titulo;
+        }
+
+        public double getRelevancia() {
+            return relevancia;
+        }
+    }
+    */
+
 
     //Conta os Elementos da Raiz pelo nome
 
@@ -48,90 +89,78 @@ public class OperacoesXML {
     }
 
 
-    public void search(String entrada, Element e){
-        if(e == null){
+   public void search(Element root, String input){
+        if(root == null){
             return;
-
         }
-        double last_relevance = 0.0;
-        double cur_relevance = 0.0;
-        NodeList childs = e.getElementsByTagName("page");
-        for (int i = 0; i < childs.getLength(); i++){
-            Node cur = childs.item(i);
-            if(cur.getNodeType() == Element.ELEMENT_NODE){
-                Element elm = (Element)cur;
-                String s = e.getElementsByTagName("text").item(0).getTextContent().toLowerCase();
-                if(s.contains(entrada.toLowerCase())){
-                    cur_relevance = calcRelevance(entrada.toLowerCase(), elm);
-                    System.out.println("-----------");
-                    System.out.println("Id: " + e.getElementsByTagName("id").item(0).getTextContent());
-                    System.out.println("Titulo: " + e.getElementsByTagName("title").item(0).getTextContent());
-                    System.out.println("Relevancia: " + cur_relevance);
-                    System.out.println("-----------");
+
+        NodeList pages = root.getElementsByTagName("page");
+
+
+        for(int i = 0; i < pages.getLength(); i++) {
+            Node pageNode = pages.item(i);
+            if (pageNode.getNodeType() == Element.ELEMENT_NODE){
+                Element pageElement = (Element )pageNode;
+
+                String titulo = pageElement.getElementsByTagName("title").item(0).getTextContent();
+                String textContent = pageElement.getElementsByTagName("text").item(0).getTextContent();
+
+                int ocorrencia = countOcurrence(input, textContent);
+
+                if(ocorrencia > 0){
+                    double relevance = (double) ocorrencia/textContent.length();
+                    String [] palavrasTitulo = titulo.split("\\s+");
+                    for (String palavraDoTitulo : palavrasTitulo) {
+                        if(input.equalsIgnoreCase(palavraDoTitulo)){
+                            relevance += 1.0;
+                            break;
+
+                        }
+
+                    }
+
+                    String id = pageElement.getElementsByTagName("id").item(0).getTextContent();
+                    System.out.println("Titulo: "+ titulo + "\nID: " + id + "\nRelevancia: " + relevance);
 
                 }
 
 
 
             }
-        }
-    }
 
-
-
-    public void printElements(Element root){
-        if(root == null){
-            return;
 
         }
+   }
 
-        NodeList childs = root.getElementsByTagName("page");
 
-        for(int i = 0; i < childs.getLength(); i++){
-            Node n = childs.item(i);
-            System.out.println("------------");
-            System.out.println("Elemento Atual :" + n.getNodeName());
-            System.out.println("------------");
-            if(n.getNodeType() == Node.ELEMENT_NODE){
-                Element e = (Element)n;
-                System.out.println("Id: " + e.getElementsByTagName("id").item(0).getTextContent());
-                System.out.println("Titulo: " + e.getElementsByTagName("title").item(0).getTextContent());
+
+
+
+
+
+
+
+
+
+
+
+    public int countOcurrence(String input, String s){
+        if(!s.isEmpty()){
+            int ocurrence = 0;
+            String[] palavras = s.split("\\s+");
+            for (String palavra : palavras) {
+                if (input.equalsIgnoreCase(palavra)){
+                    ocurrence++;
+                }
             }
-
+            return ocurrence;
         }
+        return 0;
 
-    }
-
-    private double calcRelevance(String input, Element e){
-        String titulo = e.getElementsByTagName("title").item(0).getTextContent().toLowerCase();
-
-        String txt = e.getElementsByTagName("text").item(0).getTextContent().toLowerCase();
-        double relevancia = (double) countOcurrence(input, txt) / txt.length();
-        if(input.equalsIgnoreCase(titulo)){
-            relevancia += 0.2;
-
-        }
-
-        return relevancia;
     }
 
 
 
-    private int countOcurrence(String input, String txt){
-        int ocurrence = 0;
-        if(txt == null){
-            return 0;
-
-        }
-        Pattern p = Pattern.compile(input.toLowerCase(), Pattern.CASE_INSENSITIVE);
-        Matcher m = p.matcher(txt);
-        while (m.find()){
-            ocurrence++;
-
-        }
-
-        return ocurrence;
-    }
 
 
 
