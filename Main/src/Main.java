@@ -7,6 +7,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,15 +16,16 @@ import java.util.regex.Pattern;
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) throws Exception {
-        String caminho = "C:\\Users\\elian\\OneDrive\\Área de Trabalho\\motorDeBusca\\Main\\src\\documents\\verbetesWikipedia.xml";
+        String caminho = "C:\\Users\\ei.silva\\OneDrive - EGIS Group\\Bureau\\LabHipermidia\\Main\\src\\documents\\verbetesWikipedia.xml";
         Document doc = lerXML(caminho);
         OperacoesXML op = new OperacoesXML();
         Element root = doc.getDocumentElement();
         String entrada = "Computer";
 
-        op.processarXML(root);
-        op.search(entrada);
+        //op.processarXML(root);
+        //op.search(entrada);
 
+        op.processXML(root, entrada);
 
 
 

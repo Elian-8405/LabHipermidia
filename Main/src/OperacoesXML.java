@@ -9,129 +9,80 @@ import java.util.regex.Pattern;
 public class OperacoesXML {
     //Contem os metodos de operacoes com no arquivo XML
 
-    private Map<String, Map<Double, List<Element>>> cacheDeBusca;
-    private Set<String> palavrasValidas;
+    private Map<String, List<ElementoInfo>> cache = new HashMap<>();
 
-    public OperacoesXML(){
-        this.cacheDeBusca = new HashMap<>();
-        this.palavrasValidas = new HashSet<>();
+    public OperacoesXML() {
+
     }
 
 
-
-
-    public void processarXML(Element root){
-        if(root == null){
+    public void processXML(Element root, String input) {
+        if (root == null || input == null || input.isEmpty()) {
             return;
         }
 
-        NodeList pages = root.getElementsByTagName("page");
+        NodeList getPages = root.getElementsByTagName("page");
 
-        for(int i = 0; i < pages.getLength(); i++) {
-            Node pageNode = pages.item(i);
-            if(pageNode.getNodeType() == Element.ELEMENT_NODE){
-                Element elementoDaPagina = (Element) pageNode;
-                //Pega o titulo da tag <tilte>
-                String titulo = elementoDaPagina.getElementsByTagName("title").item(0).getTextContent();
-                //Pega o texto da tag <text>
-                String textContent = elementoDaPagina.getElementsByTagName("text").item(0).getTextContent();
+        for (int i = 0; i < getPages.getLength(); i++) {
+            Node pageN = getPages.item(i);
+            if (pageN.getNodeType() == Element.ELEMENT_NODE) {
+                Element element = (Element) pageN;
+                String id = element.getElementsByTagName("id").item(0).getTextContent();
+                String titulo = element.getElementsByTagName("title").item(0).getTextContent();
+                String text = element.getElementsByTagName("text").item(0).getTextContent();
+                String[] palavras = text.split("\\s+");
 
-                String[] palavras = textContent.split("\\s+");
-
+                // Itera sobre as palavras do texto
                 for (String palavra : palavras) {
-                    if(palavra.length() > 4){
-                        //Adiciona somente as palavras validadas no processamento
-                        palavrasValidas.add(palavra.toLowerCase());
+                    palavra = palavra.toLowerCase().replaceAll("[^a-z0-9]", ""); // Normaliza a palavra (minúsculas e remove caracteres especiais)
 
-                        int ocorrencias = countOcurrence(palavra, textContent);
-                        double relevancia = (double)ocorrencias/ textContent.length();
-                        if(titulo.toLowerCase().contains(palavra.toLowerCase())){
-                            relevancia += 1.0;
+                    if (palavra.length() > 4 && palavra.equals(input.toLowerCase())) {
+                        // Incrementa as ocorrências da palavra no cache
+                        List<ElementoInfo> lista = cache.computeIfAbsent(palavra, k -> new ArrayList<>());
+                        boolean found = false;
+                        for (ElementoInfo info : lista) {
+                            if (info.getId().equals(id) && info.getTitulo().equals(titulo)) {
+                                found = true;
+                                break;
+                            }
                         }
-                        cacheDeBusca.computeIfAbsent(palavra.toLowerCase(), k -> new TreeMap<>(Comparator.reverseOrder()))
-                                    .computeIfAbsent(relevancia, k-> new ArrayList<>())
-                                    .add(elementoDaPagina);
-
-
-                    }
-
-                }
-            }
-
-        }
-
-    }
-
-
-   public void search(String input){
-        if(input.isEmpty()){
-            return;
-        }
-        if(!palavrasValidas.contains(input)){
-            System.out.println("Palavra Invalida");
-            return;
-
-        }
-        if(cacheDeBusca.containsKey(input)){
-            Map<Double, List<Element>> result = cacheDeBusca.get(input);
-            System.out.println("Resultados para: " + input);
-            int first5 = 0;
-            for(Map.Entry<Double, List<Element>> entry : result.entrySet()){
-                double relevance = entry.getKey();
-
-                for(Element page : entry.getValue()){
-                    String titulo = page.getElementsByTagName("title").item(0).getTextContent();
-                    String id = page.getElementsByTagName("id").item(0).getTextContent();
-                    System.out.println("Relevancia: "+ relevance);
-                    System.out.println("ID: "+ id);
-                    System.out.println("Titulo: "+ titulo);
-
-                    first5++;
-                    if(first5 >= 5){
-                        return;
+                        if (!found) {
+                            lista.add(new ElementoInfo(id, titulo));
+                        }
 
                     }
                 }
-
-
             }
-
-        }else{
-            System.out.println("Nenhum resuldao Encontrado!");
-
-
         }
-   }
 
+        // Exibe o resultado
+        if (cache.containsKey(input.toLowerCase())) {
+            List<ElementoInfo> listaDeInfos = cache.get(input.toLowerCase());
+            System.out.println("A palavra '" + input + "' apareceu " + listaDeInfos.size() + " vez(es).");
 
-
-
-
-    private int countOcurrence(String input, String s){
-        if(!s.isEmpty()){
-            int ocurrence = 0;
-            //Faz o split do texto recebido
-            String[] palavrasDoTexto = s.split("\\s+");
-            //Para cada palavra do meu texto com split
-            for (String ocorrence : palavrasDoTexto) {
-                if(ocorrence.equalsIgnoreCase(input)){
-                    ocurrence++;
-
-                }
-
+            for (ElementoInfo info : listaDeInfos) {
+                System.out.println("ID: " + info.getId() + ", Título: " + info.getTitulo());
             }
-
-            return ocurrence;
+        } else {
+            System.out.println("A palavra '" + input + "' não foi encontrada.");
         }
-        return 0;
-
     }
-
-
-
-
-
-
-
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
