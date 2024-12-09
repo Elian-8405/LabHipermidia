@@ -2,131 +2,102 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class OperacoesXML {
     //Contem os metodos de operacoes com no arquivo XML
 
+    private Map<String, Map<Double, List<Element>>> cacheDeBusca;
+    private Set<String> palavrasValidas;
+
     public OperacoesXML(){
-
-    }
-    /*
-    class Resultado {
-        private final String id;
-        private final String titulo;
-        private final double relevancia;
-
-        public Resultado(String id, String titulo, double relevancia) {
-            this.id = id;
-            this.titulo = titulo;
-            this.relevancia = relevancia;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Resultado resultado)) return false;
-            return Double.compare(getRelevancia(), resultado.getRelevancia()) == 0;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(getRelevancia());
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public String getTitulo() {
-            return titulo;
-        }
-
-        public double getRelevancia() {
-            return relevancia;
-        }
-    }
-    */
-
-
-    //Conta os Elementos da Raiz pelo nome
-
-    public int countElementByName(Element root, String tagName){
-        int total = 0;
-        if(root != null){
-            NodeList childs = root.getChildNodes();
-            Node curNode = null;
-            for(int i = 0; i < childs.getLength(); i++){
-                curNode = childs.item(i);
-                if(curNode.getNodeName().equalsIgnoreCase(tagName)){
-                    total++;
-                }
-            }
-        }else{
-            return 0;
-        }
-        return total;
-    }
-
-    public void readContentByTag(Element root, String tagName){
-        try{
-            NodeList selectedTag = root.getElementsByTagName(tagName.toLowerCase());
-            Node curNode = null;
-            Element element = null;
-            for(int i = 0; i < selectedTag.getLength(); i++){
-                curNode = selectedTag.item(i);
-                element = (Element)curNode;
-                System.out.println(element.getTextContent());
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        this.cacheDeBusca = new HashMap<>();
+        this.palavrasValidas = new HashSet<>();
     }
 
 
-   public void search(Element root, String input){
+
+
+    public void processarXML(Element root){
         if(root == null){
             return;
         }
 
         NodeList pages = root.getElementsByTagName("page");
 
-
         for(int i = 0; i < pages.getLength(); i++) {
             Node pageNode = pages.item(i);
-            if (pageNode.getNodeType() == Element.ELEMENT_NODE){
-                Element pageElement = (Element )pageNode;
+            if(pageNode.getNodeType() == Element.ELEMENT_NODE){
+                Element elementoDaPagina = (Element) pageNode;
+                //Pega o titulo da tag <tilte>
+                String titulo = elementoDaPagina.getElementsByTagName("title").item(0).getTextContent();
+                //Pega o texto da tag <text>
+                String textContent = elementoDaPagina.getElementsByTagName("text").item(0).getTextContent();
 
-                String titulo = pageElement.getElementsByTagName("title").item(0).getTextContent();
-                String textContent = pageElement.getElementsByTagName("text").item(0).getTextContent();
+                String[] palavras = textContent.split("\\s+");
 
-                int ocorrencia = countOcurrence(input, textContent);
+                for (String palavra : palavras) {
+                    if(palavra.length() > 4){
+                        //Adiciona somente as palavras validadas no processamento
+                        palavrasValidas.add(palavra.toLowerCase());
 
-                if(ocorrencia > 0){
-                    double relevance = (double) ocorrencia/textContent.length();
-                    String [] palavrasTitulo = titulo.split("\\s+");
-                    for (String palavraDoTitulo : palavrasTitulo) {
-                        if(input.equalsIgnoreCase(palavraDoTitulo)){
-                            relevance += 1.0;
-                            break;
-
+                        int ocorrencias = countOcurrence(palavra, textContent);
+                        double relevancia = (double)ocorrencias/ textContent.length();
+                        if(titulo.toLowerCase().contains(palavra.toLowerCase())){
+                            relevancia += 1.0;
                         }
+                        cacheDeBusca.computeIfAbsent(palavra.toLowerCase(), k -> new TreeMap<>(Comparator.reverseOrder()))
+                                    .computeIfAbsent(relevancia, k-> new ArrayList<>())
+                                    .add(elementoDaPagina);
+
 
                     }
 
-                    String id = pageElement.getElementsByTagName("id").item(0).getTextContent();
-                    System.out.println("Titulo: "+ titulo + "\nID: " + id + "\nRelevancia: " + relevance);
+                }
+            }
 
+        }
+
+    }
+
+
+   public void search(String input){
+        if(input.isEmpty()){
+            return;
+        }
+        if(!palavrasValidas.contains(input)){
+            System.out.println("Palavra Invalida");
+            return;
+
+        }
+        if(cacheDeBusca.containsKey(input)){
+            Map<Double, List<Element>> result = cacheDeBusca.get(input);
+            System.out.println("Resultados para: " + input);
+            int first5 = 0;
+            for(Map.Entry<Double, List<Element>> entry : result.entrySet()){
+                double relevance = entry.getKey();
+
+                for(Element page : entry.getValue()){
+                    String titulo = page.getElementsByTagName("title").item(0).getTextContent();
+                    String id = page.getElementsByTagName("id").item(0).getTextContent();
+                    System.out.println("Relevancia: "+ relevance);
+                    System.out.println("ID: "+ id);
+                    System.out.println("Titulo: "+ titulo);
+
+                    first5++;
+                    if(first5 >= 5){
+                        return;
+
+                    }
                 }
 
 
-
             }
+
+        }else{
+            System.out.println("Nenhum resuldao Encontrado!");
 
 
         }
@@ -136,23 +107,20 @@ public class OperacoesXML {
 
 
 
-
-
-
-
-
-
-
-
-    public int countOcurrence(String input, String s){
+    private int countOcurrence(String input, String s){
         if(!s.isEmpty()){
             int ocurrence = 0;
-            String[] palavras = s.split("\\s+");
-            for (String palavra : palavras) {
-                if (input.equalsIgnoreCase(palavra)){
+            //Faz o split do texto recebido
+            String[] palavrasDoTexto = s.split("\\s+");
+            //Para cada palavra do meu texto com split
+            for (String ocorrence : palavrasDoTexto) {
+                if(ocorrence.equalsIgnoreCase(input)){
                     ocurrence++;
+
                 }
+
             }
+
             return ocurrence;
         }
         return 0;

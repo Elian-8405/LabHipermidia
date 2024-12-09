@@ -20,8 +20,8 @@ public class Main {
         Element root = doc.getDocumentElement();
         String entrada = "Computer";
 
-
-        op.search(root, entrada);
+        op.processarXML(root);
+        op.search(entrada);
 
 
 
